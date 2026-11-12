@@ -1,6 +1,18 @@
 name: Build APK
 on:
   push:
+    branches:
+      - main
+    paths:
+      - 'app/**'
+      - 'build.gradle'
+      - 'build.gradle.kts'
+      - 'settings.gradle'
+      - 'settings.gradle.kts'
+      - 'gradle.properties'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'gradlew.bat'
   workflow_dispatch:
 
 permissions:
@@ -33,3 +45,13 @@ jobs:
             Download app-debug.apk below and install it on your Android device.
           files: app/build/outputs/apk/debug/app-debug.apk
           make_latest: true
+      - name: Keep only the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current_tag="build-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+          while IFS= read -r tag; do
+            if [ -n "$tag" ] && [ "$tag" != "$current_tag" ]; then
+              gh release delete "$tag" --yes --cleanup-tag
+            fi
+          done < <(gh release list --limit 100 --json tagName --jq '.[].tagName')
