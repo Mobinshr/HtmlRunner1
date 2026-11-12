@@ -19,6 +19,7 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -155,7 +156,18 @@ public class MainActivity extends Activity {
 
     private void loadSingleHtmlFile(Uri uri) {
         projectTree = null;
-        web.loadUrl(uri.toString());
+        try (InputStream input = getContentResolver().openInputStream(uri);
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            if (input == null) throw new IllegalStateException("Unable to open file");
+            byte[] buffer = new byte[8192];
+            int count;
+            while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
+            web.loadDataWithBaseURL("https://" + PROJECT_HOST + "/",
+                    output.toString("UTF-8"), "text/html", "UTF-8", null);
+        } catch (Exception e) {
+            Toast.makeText(this, "فایل HTML باز نشد", Toast.LENGTH_LONG).show();
+            showHome();
+        }
     }
 
     private WebResourceResponse serveProjectFile(Uri requestUri) {
