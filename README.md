@@ -1,6 +1,10 @@
 # HTML Runner
 
 <p align="center">
+  <img src="docs/images/html-runner-banner.jpg" alt="HTML Runner promotional banner" width="100%">
+</p>
+
+<p align="center">
   <strong>Run your local HTML files on Android.</strong><br>
   A lightweight Android app for opening and previewing HTML pages from your device.
 </p>
