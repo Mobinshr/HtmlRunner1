@@ -3,6 +3,7 @@ package com.mobin.htmlrunner;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
@@ -173,7 +174,7 @@ public class MainActivity extends Activity {
                         || segment.contains("/") || segment.contains("\\\\")) {
                     return notFound();
                 }
-                current = DocumentsContract.findDocumentUri(getContentResolver(), current, segment);
+                current = findChildDocument(current, segment);
                 if (current == null) return notFound();
             }
 
@@ -192,6 +193,28 @@ public class MainActivity extends Activity {
         } catch (Exception e) {
             return notFound();
         }
+    }
+
+    private Uri findChildDocument(Uri parent, String displayName) {
+        String parentId = DocumentsContract.getDocumentId(parent);
+        Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(projectTree, parentId);
+        String[] projection = {
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME
+        };
+        try (Cursor cursor = getContentResolver().query(childrenUri, projection,
+                null, null, null)) {
+            if (cursor == null) return null;
+            int idColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID);
+            int nameColumn = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME);
+            while (cursor.moveToNext()) {
+                if (displayName.equals(cursor.getString(nameColumn))) {
+                    return DocumentsContract.buildDocumentUriUsingTree(
+                            projectTree, cursor.getString(idColumn));
+                }
+            }
+        }
+        return null;
     }
 
     private String mimeFromName(String name) {
