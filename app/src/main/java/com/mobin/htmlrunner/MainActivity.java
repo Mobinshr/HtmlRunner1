@@ -79,7 +79,7 @@ public class MainActivity extends Activity {
 
         setContentView(root);
 
-        Uri incoming = getIntent().getData();
+        Uri incoming = getIncomingHtmlUri(getIntent());
         if (incoming != null) {
             loadSingleHtmlFile(incoming);
         } else {
@@ -91,7 +91,32 @@ public class MainActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        if (intent.getData() != null) loadSingleHtmlFile(intent.getData());
+        Uri incoming = getIncomingHtmlUri(intent);
+        if (incoming != null) loadSingleHtmlFile(incoming);
+    }
+
+    private Uri getIncomingHtmlUri(Intent intent) {
+        if (intent == null) return null;
+        Uri uri = intent.getData();
+        if (uri == null) {
+            Object stream = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+            if (stream instanceof Uri) uri = (Uri) stream;
+        }
+        if (uri == null && intent.getClipData() != null
+                && intent.getClipData().getItemCount() > 0) {
+            uri = intent.getClipData().getItemAt(0).getUri();
+        }
+        if (uri != null && ("content".equalsIgnoreCase(uri.getScheme())
+                || "file".equalsIgnoreCase(uri.getScheme()))) {
+            try {
+                getContentResolver().takePersistableUriPermission(uri,
+                        intent.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            } catch (Exception ignored) {
+                // Temporary URI grants are sufficient while the Activity is alive.
+            }
+            return uri;
+        }
+        return null;
     }
 
     private void pickProjectFolder() {
@@ -277,7 +302,23 @@ public class MainActivity extends Activity {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             Uri uri = request.getUrl();
-            if (PROJECT_HOST.equals(uri.getHost())) return false;
+            if ("content".equalsIgnoreCase(uri.getScheme())
+                    || "file".equalsIgnoreCase(uri.getScheme())) {
+                loadSingleHtmlFile(uri);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            Uri uri = Uri.parse(url);
+            if ("content".equalsIgnoreCase(uri.getScheme())
+                    || "file".equalsIgnoreCase(uri.getScheme())) {
+                loadSingleHtmlFile(uri);
+                return true;
+            }
             return false;
         }
     }
