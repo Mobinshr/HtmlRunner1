@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Build;
 import android.provider.DocumentsContract;
 import android.view.View;
 import android.webkit.WebChromeClient;
@@ -73,8 +74,20 @@ public class MainActivity extends Activity {
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setSupportZoom(false);
+        settings.setBuiltInZoomControls(false);
+        settings.setDisplayZoomControls(false);
+        settings.setLoadWithOverviewMode(true);
+        settings.setUseWideViewPort(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            settings.setSafeBrowsingEnabled(true);
+        }
+        web.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        web.setHorizontalScrollBarEnabled(false);
         web.setWebViewClient(new ProjectWebViewClient());
         web.setWebChromeClient(new WebChromeClient());
+        web.getSettings().setSupportMultipleWindows(false);
         root.addView(web, new LinearLayout.LayoutParams(-1, 0, 1));
 
         setContentView(root);
@@ -219,7 +232,9 @@ public class MainActivity extends Activity {
             if (stream == null) return notFound();
 
             String mime = getContentResolver().getType(current);
-            if (mime == null) mime = mimeFromName(segments.get(segments.size() - 1));
+            if (mime == null || "application/octet-stream".equalsIgnoreCase(mime)) {
+                mime = mimeFromName(segments.get(segments.size() - 1));
+            }
             boolean text = mime.startsWith("text/") || mime.contains("javascript")
                     || mime.contains("json") || mime.contains("xml") || mime.contains("svg");
             Map<String, String> headers = new HashMap<>();
@@ -257,6 +272,9 @@ public class MainActivity extends Activity {
     private String mimeFromName(String name) {
         String lower = name.toLowerCase(java.util.Locale.ROOT);
         if (lower.endsWith(".html") || lower.endsWith(".htm")) return "text/html";
+        if (lower.endsWith(".webmanifest")) return "application/manifest+json";
+        if (lower.endsWith(".wasm")) return "application/wasm";
+        if (lower.endsWith(".map")) return "application/json";
         if (lower.endsWith(".css")) return "text/css";
         if (lower.endsWith(".js") || lower.endsWith(".mjs")) return "application/javascript";
         if (lower.endsWith(".json")) return "application/json";
@@ -265,10 +283,15 @@ public class MainActivity extends Activity {
         if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
         if (lower.endsWith(".gif")) return "image/gif";
         if (lower.endsWith(".webp")) return "image/webp";
+        if (lower.endsWith(".avif")) return "image/avif";
         if (lower.endsWith(".woff")) return "font/woff";
         if (lower.endsWith(".woff2")) return "font/woff2";
         if (lower.endsWith(".ttf")) return "font/ttf";
+        if (lower.endsWith(".otf")) return "font/otf";
+        if (lower.endsWith(".eot")) return "application/vnd.ms-fontobject";
         if (lower.endsWith(".ico")) return "image/x-icon";
+        if (lower.endsWith(".mp4")) return "video/mp4";
+        if (lower.endsWith(".mp3")) return "audio/mpeg";
         return "application/octet-stream";
     }
 
@@ -321,6 +344,34 @@ public class MainActivity extends Activity {
             }
             return false;
         }
+    }
+
+    @Override
+    protected void onPause() {
+        if (web != null) web.onPause();
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (web != null) web.onResume();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (web != null) {
+            web.stopLoading();
+            web.loadUrl("about:blank");
+            web.clearHistory();
+            web.removeAllViews();
+            if (web.getParent() instanceof android.view.ViewGroup) {
+                ((android.view.ViewGroup) web.getParent()).removeView(web);
+            }
+            web.destroy();
+            web = null;
+        }
+        super.onDestroy();
     }
 
     @Override
