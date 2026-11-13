@@ -17,6 +17,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.InputStream;
@@ -35,6 +37,8 @@ public class MainActivity extends Activity {
 
     private WebView web;
     private Uri projectTree;
+    private TextView errorPanel;
+    private final StringBuilder consoleErrors = new StringBuilder();
 
     @Override
     protected void onCreate(Bundle state) {
@@ -54,6 +58,15 @@ public class MainActivity extends Activity {
         fileButton.setText("📄 فایل HTML");
         fileButton.setOnClickListener(v -> pickHtmlFile());
 
+        Button errorsButton = new Button(this);
+        errorsButton.setText("⚠ خطاها");
+        errorsButton.setOnClickListener(v -> {
+            if (errorPanel != null) {
+                errorPanel.setVisibility(errorPanel.getVisibility() == View.VISIBLE
+                        ? View.GONE : View.VISIBLE);
+            }
+        });
+
         Button reloadButton = new Button(this);
         reloadButton.setText("⟳");
         reloadButton.setContentDescription("بارگذاری مجدد");
@@ -64,6 +77,7 @@ public class MainActivity extends Activity {
 
         toolbar.addView(folderButton, new LinearLayout.LayoutParams(0, -2, 1));
         toolbar.addView(fileButton, new LinearLayout.LayoutParams(0, -2, 1));
+        toolbar.addView(errorsButton, new LinearLayout.LayoutParams(-2, -2));
         toolbar.addView(reloadButton, new LinearLayout.LayoutParams(-2, -2));
         root.addView(toolbar, new LinearLayout.LayoutParams(-1, -2));
 
@@ -86,9 +100,28 @@ public class MainActivity extends Activity {
         web.setOverScrollMode(View.OVER_SCROLL_NEVER);
         web.setHorizontalScrollBarEnabled(false);
         web.setWebViewClient(new ProjectWebViewClient());
-        web.setWebChromeClient(new WebChromeClient());
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(android.webkit.ConsoleMessage message) {
+                if (message.messageLevel() == android.webkit.ConsoleMessage.MessageLevel.ERROR) {
+                    recordConsoleError(message.message(), message.sourceId(), message.lineNumber());
+                }
+                return true;
+            }
+        });
         web.getSettings().setSupportMultipleWindows(false);
         root.addView(web, new LinearLayout.LayoutParams(-1, 0, 1));
+
+        ScrollView errorScroll = new ScrollView(this);
+        errorPanel = new TextView(this);
+        errorPanel.setText("خطاهای JavaScript اینجا نمایش داده می‌شوند.");
+        errorPanel.setTextSize(12);
+        errorPanel.setTextColor(0xFFFFB4AB);
+        errorPanel.setBackgroundColor(0xFF202124);
+        errorPanel.setPadding(16, 12, 16, 12);
+        errorScroll.addView(errorPanel);
+        errorScroll.setVisibility(View.GONE);
+        root.addView(errorScroll, new LinearLayout.LayoutParams(-1, 120));
 
         setContentView(root);
 
@@ -106,6 +139,22 @@ public class MainActivity extends Activity {
         setIntent(intent);
         Uri incoming = getIncomingHtmlUri(intent);
         if (incoming != null) loadSingleHtmlFile(incoming);
+    }
+
+    private void recordConsoleError(String message, String source, int line) {
+        String entry = "خط " + line + " | " + message
+                + (source == null || source.isEmpty() ? "" : "\\n" + source);
+        consoleErrors.append(entry).append("\\n\\n");
+        String[] entries = consoleErrors.toString().split("\\n\\n");
+        if (entries.length > 30) {
+            consoleErrors.setLength(0);
+            for (int i = entries.length - 30; i < entries.length; i++) {
+                consoleErrors.append(entries[i]).append("\\n\\n");
+            }
+        }
+        runOnUiThread(() -> {
+            if (errorPanel != null) errorPanel.setText(consoleErrors.toString());
+        });
     }
 
     private Uri getIncomingHtmlUri(Intent intent) {
