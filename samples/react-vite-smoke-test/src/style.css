@@ -1,0 +1,32 @@
+:root {
+  font-family: Tahoma, Arial, sans-serif;
+  color: #edf2ff;
+  background: #0b1220;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+button, a { font: inherit; }
+.app { width: min(100% - 28px, 620px); margin: 0 auto; padding: 22px 0 28px; }
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+.brand { font-weight: 800; letter-spacing: .2px; }
+.nav div { display: flex; gap: 8px; }
+.nav a { color: #aebbd3; text-decoration: none; padding: 9px 11px; border-radius: 10px; font-size: 13px; }
+.nav a.active { color: #fff; background: #263754; }
+.panel { background: #151f31; border: 1px solid #2b3a54; border-radius: 22px; padding: 24px; box-shadow: 0 18px 50px #0003; }
+.logo-wrap { width: 64px; height: 64px; display: grid; place-items: center; background: #263754; border-radius: 18px; margin-bottom: 20px; }
+.logo-wrap img { width: 42px; height: 42px; }
+.eyebrow { color: #75d5c2; font-size: 11px; font-weight: 800; letter-spacing: 1.4px; }
+h1 { font-size: clamp(27px, 7vw, 38px); margin: 8px 0 10px; }
+.muted { color: #aebbd3; line-height: 1.9; font-size: 14px; }
+.counter { margin: 24px 0; padding: 18px; text-align: center; border-radius: 16px; background: #0e1727; border: 1px solid #293a55; }
+.counter span { display: block; color: #aebbd3; font-size: 13px; }
+.counter strong { display: block; font-size: 44px; margin: 8px 0 14px; }
+.actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; }
+button { border: 0; border-radius: 11px; padding: 11px 17px; color: #09201d; background: #75d5c2; font-weight: 800; cursor: pointer; }
+button.secondary { color: #dce6f8; background: #2b3a54; }
+.checks { list-style: none; padding: 0; margin: 0; color: #c9d5e9; line-height: 2.2; font-size: 13px; }
+.route-value { padding: 13px; border-radius: 12px; background: #0e1727; color: #75d5c2; direction: ltr; text-align: center; }
+footer { text-align: center; color: #73839e; font-size: 11px; padding: 20px 0 0; }
+@media (max-width: 380px) { .panel { padding: 18px; } .nav { align-items: flex-start; flex-direction: column; } }
