@@ -1,0 +1,44 @@
+name: Build React Vite Sample
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "samples/react-vite-smoke-test/**"
+      - ".github/workflows/build-react-vite-sample.yml"
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: samples/react-vite-smoke-test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: samples/react-vite-smoke-test/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build production files
+        run: npm run build
+
+      - name: Upload dist folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-vite-dist
+          path: samples/react-vite-smoke-test/dist/
+          if-no-files-found: error
+          retention-days: 7
