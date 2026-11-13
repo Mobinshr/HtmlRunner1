@@ -230,7 +230,7 @@ public class MainActivity extends Activity {
                 current = findChildDocument(current, segment);
                 if (current == null) {
                     // BrowserRouter routes have no file extension: serve the app shell.
-                    if (i == segments.size() - 1 && !segment.contains(".")) {
+                    if (!segments.get(segments.size() - 1).contains(".")) {
                         current = findChildDocument(rootDocument, "index.html");
                         servedName = "index.html";
                         break;
