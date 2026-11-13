@@ -215,17 +215,28 @@ public class MainActivity extends Activity {
         if (segments.isEmpty()) segments = java.util.Collections.singletonList("index.html");
 
         Uri current;
+        String servedName = segments.get(segments.size() - 1);
         try {
             String rootId = DocumentsContract.getTreeDocumentId(projectTree);
-            current = DocumentsContract.buildDocumentUriUsingTree(projectTree, rootId);
+            Uri rootDocument = DocumentsContract.buildDocumentUriUsingTree(projectTree, rootId);
+            current = rootDocument;
 
-            for (String segment : segments) {
+            for (int i = 0; i < segments.size(); i++) {
+                String segment = segments.get(i);
                 if (segment.isEmpty() || segment.equals(".") || segment.equals("..")
                         || segment.contains("/") || segment.contains("\\\\")) {
                     return notFound();
                 }
                 current = findChildDocument(current, segment);
-                if (current == null) return notFound();
+                if (current == null) {
+                    // BrowserRouter routes have no file extension: serve the app shell.
+                    if (i == segments.size() - 1 && !segment.contains(".")) {
+                        current = findChildDocument(rootDocument, "index.html");
+                        servedName = "index.html";
+                        break;
+                    }
+                    return notFound();
+                }
             }
 
             InputStream stream = getContentResolver().openInputStream(current);
@@ -233,7 +244,7 @@ public class MainActivity extends Activity {
 
             String mime = getContentResolver().getType(current);
             if (mime == null || "application/octet-stream".equalsIgnoreCase(mime)) {
-                mime = mimeFromName(segments.get(segments.size() - 1));
+                mime = mimeFromName(servedName);
             }
             boolean text = mime.startsWith("text/") || mime.contains("javascript")
                     || mime.contains("json") || mime.contains("xml") || mime.contains("svg");
